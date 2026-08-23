@@ -1,0 +1,13 @@
+# Automatically generated - DO NOT EDIT!
+
+"$schema" = "../../schemas/schema.json"
+
+[[permission]]
+identifier = "allow-close-menu-window"
+description = "Enables the close_menu_window command without any pre-configured scope."
+commands.allow = ["close_menu_window"]
+
+[[permission]]
+identifier = "deny-close-menu-window"
+description = "Denies the close_menu_window command without any pre-configured scope."
+commands.deny = ["close_menu_window"]

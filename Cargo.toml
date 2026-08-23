@@ -1,0 +1,20 @@
+[package]
+name = "tauri-plugin-vsk-contextual-menu"
+version = "2.0.0"
+authors = ["Joaquin (Pato) Decima <jdecima@vasak.net.ar>"]
+description = "The VasakOS contextual menu: one look and one behaviour for every right click."
+edition = "2021"
+rust-version = "1.77.2"
+repository = "https://github.com/VasakOS/tauri-plugin-vsk-contextual-menu"
+license = "GPL-3.0-only"
+exclude = ["/examples", "/dist-js", "/guest-js", "/node_modules"]
+links = "tauri-plugin-vsk-contextual-menu"
+
+[dependencies]
+tauri = { version = "2" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+
+[build-dependencies]
+tauri-plugin = { version = "2", features = ["build"] }

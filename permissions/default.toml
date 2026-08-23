@@ -1,0 +1,9 @@
+[default]
+description = "Default permissions for the VasakOS contextual menu plugin."
+permissions = [
+    "allow-open-menu-window",
+    "allow-close-menu-window",
+    "allow-take-pending-menu",
+    "allow-resolve-menu",
+    "allow-show-menu-window"
+]
