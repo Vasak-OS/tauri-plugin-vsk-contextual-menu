@@ -50,6 +50,21 @@ export interface OpcionesDeDibujo {
   maxWidth?: number;
   /** Los colores del sistema. Sin ella, el menú usa los de la aplicación. */
   paleta?: Paleta | null;
+  /**
+   * Si el menú se cierra cuando la página pierde el foco o cambia de tamaño.
+   *
+   * En el modo normal, sí: el menú vive dentro de la ventana de la aplicación,
+   * y que esa ventana pase a segundo plano o cambie de tamaño son motivos
+   * legítimos para cerrarlo.
+   *
+   * En modo ventana, no. Ahí el menú es su propia ventana, que se crea oculta y
+   * se muestra recién cuando ya está dibujada: al mapearse dispara `resize`, y
+   * el foco va y viene entre ella y la ventana que la pidió. Con estos dos
+   * escuchas puestos, el menú se cerraba solo a los cien milisegundos de
+   * abrirse, sin que llegara a verse. Quien usa el modo ventana se ocupa del
+   * foco por su cuenta, con los eventos de la ventana de verdad.
+   */
+  cerrarAlPerderElFoco?: boolean;
 }
 
 interface PanelAbierto {
@@ -105,8 +120,11 @@ export class MenuDibujado {
 
     document.addEventListener("keydown", this.alTeclear, true);
     document.addEventListener("pointerdown", this.alApretarAfuera, true);
-    window.addEventListener("blur", this.alPerderElFoco);
-    window.addEventListener("resize", this.alPerderElFoco);
+
+    if (opciones.cerrarAlPerderElFoco !== false) {
+      window.addEventListener("blur", this.alPerderElFoco);
+      window.addEventListener("resize", this.alPerderElFoco);
+    }
   }
 
   get elemento(): HTMLElement {
@@ -152,6 +170,8 @@ export class MenuDibujado {
 
     document.removeEventListener("keydown", this.alTeclear, true);
     document.removeEventListener("pointerdown", this.alApretarAfuera, true);
+    // Quitarlos siempre, aunque no se hayan puesto: sacar un escucha que no
+    // está no cuesta nada y evita tener que acordarse de la opción acá.
     window.removeEventListener("blur", this.alPerderElFoco);
     window.removeEventListener("resize", this.alPerderElFoco);
     this.cancelarEspera();

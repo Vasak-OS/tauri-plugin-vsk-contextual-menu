@@ -1,6 +1,6 @@
 [package]
 name = "tauri-plugin-vsk-contextual-menu"
-version = "2.0.1"
+version = "2.0.2"
 authors = ["Joaquin (Pato) Decima <jdecima@vasak.net.ar>"]
 description = "The VasakOS contextual menu: one look and one behaviour for every right click."
 edition = "2021"

@@ -143,6 +143,12 @@ export async function mountContextMenuWindow(): Promise<void> {
   const menu = new MenuDibujado(fondo, {
     items,
     paleta,
+    // Acá el menú es su propia ventana: `blur` y `resize` de la página llegan
+    // solos al mostrarla —al mapearse cambia de tamaño y el foco va y viene con
+    // la ventana que la pidió— y cerraban el menú a los cien milisegundos de
+    // abrirse, sin que llegara a verse. El foco lo maneja esta función, más
+    // abajo, con los eventos de la ventana de verdad.
+    cerrarAlPerderElFoco: false,
     alElegir: (eleccion) => {
       menu.cerrar();
       void invoke("plugin:vsk-contextual-menu|resolve_menu", {
@@ -165,4 +171,25 @@ export async function mountContextMenuWindow(): Promise<void> {
   // Recién ahora se muestra la ventana: mostrarla antes deja ver un rectángulo
   // vacío del tamaño final.
   await invoke("plugin:vsk-contextual-menu|show_menu_window");
+
+  // Se cierra cuando la ventana pierde el foco, pero recién después de haberlo
+  // tenido: entre que se crea y se muestra, el compositor manda un par de
+  // cambios de foco que no significan que alguien se haya ido a otra cosa.
+  const ventana = getCurrentWindow();
+  let tuvoElFoco = false;
+
+  const dejarDeEscuchar = await ventana.onFocusChanged(({ payload: enfocada }) => {
+    if (enfocada) {
+      tuvoElFoco = true;
+      return;
+    }
+
+    if (!tuvoElFoco) {
+      return;
+    }
+
+    dejarDeEscuchar();
+    menu.cerrar();
+    void invoke("plugin:vsk-contextual-menu|close_menu_window");
+  });
 }
