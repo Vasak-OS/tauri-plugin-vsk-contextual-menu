@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { conTipo } from './window-mode';
+import { conTipo, guardiaDeFoco } from './window-mode';
 import type { MenuEntry } from './types';
 
 /**
@@ -48,5 +48,49 @@ describe('el tipo de cada renglón antes de cruzar a Rust', () => {
 
 	it('una lista vacía no rompe', () => {
 		expect(conTipo([])).toEqual([]);
+	});
+});
+
+/**
+ * El menú en modo ventana se cierra cuando la ventana pierde el foco, pero
+ * entre que se crea y se muestra el compositor manda cambios de foco que no
+ * significan que alguien se haya ido a otra cosa.
+ */
+describe('cuándo cerrar el menú por el foco', () => {
+	it('se cierra al perder el foco después de haberlo tenido', () => {
+		let cerrado = 0;
+		const mirar = guardiaDeFoco(() => {
+			cerrado += 1;
+		});
+
+		mirar(true);
+		mirar(false);
+
+		expect(cerrado).toBe(1);
+	});
+
+	it('no se cierra por un `sin foco` anterior a haberlo tenido', () => {
+		let cerrado = 0;
+		const mirar = guardiaDeFoco(() => {
+			cerrado += 1;
+		});
+
+		// Lo que manda el compositor mientras la ventana se está mostrando.
+		mirar(false);
+		mirar(false);
+
+		expect(cerrado).toBe(0);
+	});
+
+	it('recuperar el foco no lo cierra', () => {
+		let cerrado = 0;
+		const mirar = guardiaDeFoco(() => {
+			cerrado += 1;
+		});
+
+		mirar(true);
+		mirar(true);
+
+		expect(cerrado).toBe(0);
 	});
 });
