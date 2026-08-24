@@ -7,6 +7,7 @@
  */
 
 import { invoke } from "@tauri-apps/api/core";
+import type { UnlistenFn } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 
 import { HOLGURA, MenuDibujado } from "./render";
@@ -109,6 +110,28 @@ export async function openContextMenuWindow(
 }
 
 /**
+ * Cuándo cerrar el menú por el foco.
+ *
+ * Entre que la ventana se crea y se muestra, el compositor manda un par de
+ * cambios de foco que no significan que alguien se haya ido a otra cosa. Por
+ * eso sólo cierra cuando pierde el foco **después** de haberlo tenido.
+ */
+export function guardiaDeFoco(cerrar: () => void): (enfocada: boolean) => void {
+  let tuvoElFoco = false;
+
+  return (enfocada) => {
+    if (enfocada) {
+      tuvoElFoco = true;
+      return;
+    }
+
+    if (tuvoElFoco) {
+      cerrar();
+    }
+  };
+}
+
+/**
  * Dibuja el menú en la ventana que el plugin abrió.
  *
  * Es lo único que tiene que hacer la ruta que la aplicación registra para el
@@ -140,25 +163,37 @@ export async function mountContextMenuWindow(): Promise<void> {
   fondo.className = "vsk-menu-fondo";
   document.body.appendChild(fondo);
 
+  let dejarDeEscuchar: UnlistenFn | null = null;
+
+  /** Cierra el menú una sola vez y avisa del lado de Rust. */
+  function cerrar(avisar: () => void): void {
+    dejarDeEscuchar?.();
+    dejarDeEscuchar = null;
+    menu.cerrar();
+    avisar();
+  }
+
   const menu = new MenuDibujado(fondo, {
     items,
     paleta,
     // Acá el menú es su propia ventana: `blur` y `resize` de la página llegan
     // solos al mostrarla —al mapearse cambia de tamaño y el foco va y viene con
     // la ventana que la pidió— y cerraban el menú a los cien milisegundos de
-    // abrirse, sin que llegara a verse. El foco lo maneja esta función, más
-    // abajo, con los eventos de la ventana de verdad.
+    // abrirse, sin que llegara a verse. El foco lo mira `guardiaDeFoco`, con
+    // los eventos de la ventana de verdad.
     cerrarAlPerderElFoco: false,
     alElegir: (eleccion) => {
-      menu.cerrar();
-      void invoke("plugin:vsk-contextual-menu|resolve_menu", {
-        id: eleccion.id,
-        checked: eleccion.checked ?? null,
+      cerrar(() => {
+        void invoke("plugin:vsk-contextual-menu|resolve_menu", {
+          id: eleccion.id,
+          checked: eleccion.checked ?? null,
+        });
       });
     },
     alDescartar: () => {
-      menu.cerrar();
-      void invoke("plugin:vsk-contextual-menu|close_menu_window");
+      cerrar(() => {
+        void invoke("plugin:vsk-contextual-menu|close_menu_window");
+      });
     },
   });
 
@@ -168,28 +203,20 @@ export async function mountContextMenuWindow(): Promise<void> {
   menu.elemento.style.top = `${HOLGURA}px`;
   menu.abrir();
 
+  // El escucha va **antes** de mostrar la ventana: mostrarla es lo que le da el
+  // foco, y si el escucha llegara después, ese primer `focus(true)` se perdería
+  // y el menú no se cerraría nunca al perder el foco.
+  const mirarElFoco = guardiaDeFoco(() => {
+    cerrar(() => {
+      void invoke("plugin:vsk-contextual-menu|close_menu_window");
+    });
+  });
+
+  dejarDeEscuchar = await getCurrentWindow().onFocusChanged(({ payload: enfocada }) => {
+    mirarElFoco(enfocada);
+  });
+
   // Recién ahora se muestra la ventana: mostrarla antes deja ver un rectángulo
   // vacío del tamaño final.
   await invoke("plugin:vsk-contextual-menu|show_menu_window");
-
-  // Se cierra cuando la ventana pierde el foco, pero recién después de haberlo
-  // tenido: entre que se crea y se muestra, el compositor manda un par de
-  // cambios de foco que no significan que alguien se haya ido a otra cosa.
-  const ventana = getCurrentWindow();
-  let tuvoElFoco = false;
-
-  const dejarDeEscuchar = await ventana.onFocusChanged(({ payload: enfocada }) => {
-    if (enfocada) {
-      tuvoElFoco = true;
-      return;
-    }
-
-    if (!tuvoElFoco) {
-      return;
-    }
-
-    dejarDeEscuchar();
-    menu.cerrar();
-    void invoke("plugin:vsk-contextual-menu|close_menu_window");
-  });
 }
