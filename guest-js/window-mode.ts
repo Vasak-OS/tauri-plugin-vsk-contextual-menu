@@ -21,6 +21,33 @@ interface Resultado {
   checked: boolean | null;
 }
 
+/**
+ * Completa el `type` de cada renglón antes de cruzar a Rust.
+ *
+ * En una opción común el tipo es opcional —lo dice el tipo de TypeScript, y así
+ * está escrito en todos los ejemplos—: quien la escribe pone `id` y `label` y
+ * nada más. El JavaScript que dibuja el menú lo resuelve solo
+ * (`item.type ?? "item"`), pero del lado de Rust el árbol es un enum etiquetado
+ * por ese campo, y sin él la deserialización falla con «missing field `type`»:
+ * el menú no abría y la aplicación sólo veía un error de argumentos.
+ *
+ * Se completa acá, que es el único lugar donde el árbol sale de JavaScript.
+ */
+export function conTipo(items: MenuEntry[]): MenuEntry[] {
+  return items.map((item) => {
+    if (!("type" in item) || item.type === undefined) {
+      return { ...item, type: "item" } as MenuEntry;
+    }
+
+    // Un submenú trae adentro más renglones, con el mismo problema.
+    if (item.type === "submenu") {
+      return { ...item, items: conTipo(item.items) };
+    }
+
+    return item;
+  });
+}
+
 /** Abre el menú en una ventana propia y espera lo que se elija. */
 export async function openContextMenuWindow(
   items: MenuEntry[],
@@ -66,7 +93,7 @@ export async function openContextMenuWindow(
 
         return invoke("plugin:vsk-contextual-menu|open_menu_window", {
           request: {
-            items,
+            items: conTipo(items),
             x,
             y,
             minWidth: opciones.minWidth ?? null,
