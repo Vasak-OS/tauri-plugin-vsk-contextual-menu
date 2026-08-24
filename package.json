@@ -20,6 +20,7 @@
   ],
   "scripts": {
     "build": "bunx --bun rollup -c",
+    "test": "bun test",
     "check": "bunx --bun tsc --noEmit",
     "prepublishOnly": "bun run build"
   },
@@ -36,6 +37,7 @@
   },
   "devDependencies": {
     "@rollup/plugin-typescript": "^12.3.0",
+    "@types/bun": "^1.4.0",
     "rollup": "^4.59.0",
     "tslib": "^2.8.1",
     "typescript": "^5.9.3",
