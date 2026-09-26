@@ -57,40 +57,39 @@ describe('el tipo de cada renglón antes de cruzar a Rust', () => {
  * significan que alguien se haya ido a otra cosa.
  */
 describe('cuándo cerrar el menú por el foco', () => {
-	it('se cierra al perder el foco después de haberlo tenido', () => {
+	/**
+	 * Las tres secuencias de foco que llegan a la guardia.
+	 *
+	 * Los tres tests eran lo mismo —contar cuántas veces se cierra el menú
+	 * después de una secuencia de cambios de foco— con otra secuencia, así que
+	 * van en una tabla. El `nombre` va en la tabla y no en un `for` porque sin él
+	 * un fallo sale como «esperaba 0 y llegó 1» y no dice de cuál de las tres
+	 * secuencias se trata, que es justo lo que hay que mirar para entender por
+	 * qué se cerró.
+	 */
+	const SECUENCIAS = [
+		{
+			nombre: 'se cierra al perder el foco después de haberlo tenido',
+			focos: [true, false],
+			esperado: 1,
+		},
+		{
+			// Lo que manda el compositor mientras la ventana se está mostrando.
+			nombre: 'no se cierra por un `sin foco` anterior a haberlo tenido',
+			focos: [false, false],
+			esperado: 0,
+		},
+		{ nombre: 'recuperar el foco no lo cierra', focos: [true, true], esperado: 0 },
+	];
+
+	it.each(SECUENCIAS)('$nombre', ({ focos, esperado }) => {
 		let cerrado = 0;
 		const mirar = guardiaDeFoco(() => {
 			cerrado += 1;
 		});
 
-		mirar(true);
-		mirar(false);
+		for (const foco of focos) mirar(foco);
 
-		expect(cerrado).toBe(1);
-	});
-
-	it('no se cierra por un `sin foco` anterior a haberlo tenido', () => {
-		let cerrado = 0;
-		const mirar = guardiaDeFoco(() => {
-			cerrado += 1;
-		});
-
-		// Lo que manda el compositor mientras la ventana se está mostrando.
-		mirar(false);
-		mirar(false);
-
-		expect(cerrado).toBe(0);
-	});
-
-	it('recuperar el foco no lo cierra', () => {
-		let cerrado = 0;
-		const mirar = guardiaDeFoco(() => {
-			cerrado += 1;
-		});
-
-		mirar(true);
-		mirar(true);
-
-		expect(cerrado).toBe(0);
+		expect(cerrado).toBe(esperado);
 	});
 });
