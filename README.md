@@ -1,175 +1,382 @@
-# Tauri Plugin vsk-contextual-menu
+# Tauri plugin vsk contextual menu
 
-El menú del clic derecho de VasakOS. Las aplicaciones describen **qué** opciones
-ofrecen; el plugin decide cómo se ven, cómo responden al teclado y cómo se
-cierran. Un solo menú para todo el escritorio en vez de uno por aplicación.
 
-- Sigue el tema del sistema —colores y redondeo— sin que la aplicación haga nada.
-- Iconos del sistema, atajos, casillas, submenús, separadores y títulos.
-- Teclado completo: flechas, Inicio/Fin, Escape, y escribir para saltar a una
-  opción.
-- Dos modos de dibujo, con el mismo aspecto y el mismo comportamiento.
 
-## Requisitos
+---
 
-- Rust **1.77.2+**
-- Tauri **v2**
+## Tecnología
+
+Uso: generate-readme-badges.sh <tipo>
+
+Tipos válidos:
+  tauri-vue       Apps Tauri + Vue 3 (Rust, Tauri, Vue 3, TypeScript)
+  rust-service    Servicios Rust systemd/D-Bus (Rust, systemd, D-Bus)
+  cpp-plugin      Plugins C++ Wayfire (C++, Meson, Wayfire)
+  meson-c         Módulos C WirePlumber (C, Meson, WirePlumber)
+  meson-cpp       Plugins C++ genéricos Meson (C++, Meson)
+
+Ejemplos:
+  ./generate-readme-badges.sh tauri-vue
+  ./generate-readme-badges.sh rust-service > tech-badges.md
+
+## Estado
+
+[![CI](https://github.com/Vasak-OS/tauri-plugin-vsk-contextual-menu/actions/workflows/ci.yml/badge.svg)](https://github.com/Vasak-OS/tauri-plugin-vsk-contextual-menu/actions/workflows/ci.yml)
+[![Versión](https://img.shields.io/github/v/release/Vasak-OS/tauri-plugin-vsk-contextual-menu?style=flat&label=Versi%C3%B3n)](https://github.com/Vasak-OS/tauri-plugin-vsk-contextual-menu/releases)
+[![Licencia](https://img.shields.io/github/license/Vasak-OS/tauri-plugin-vsk-contextual-menu?style=flat)](LICENSE)
+[![Cobertura](https://sonarcloud.io/api/project_badges/measure?project=Vasak-OS_tauri-plugin-vsk-contextual-menu&metric=coverage&style=flat)](https://sonarcloud.io/summary/new_code?id=Vasak-OS_tauri-plugin-vsk-contextual-menu)
+[![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=Vasak-OS_tauri-plugin-vsk-contextual-menu&metric=alert_status&style=flat)](https://sonarcloud.io/summary/new_code?id=Vasak-OS_tauri-plugin-vsk-contextual-menu)
+[![Tamaño repo](https://img.shields.io/github/repo-size/Vasak-OS/tauri-plugin-vsk-contextual-menu?style=flat)](https://github.com/Vasak-OS/tauri-plugin-vsk-contextual-menu)
+
+---
+
+## Descripción
+
+
+
+**Para el usuario:** 
+
+**Integración VasakOS:** Integra con el ecosistema VasakOS vía D-Bus y configuración compartida.
+
+---
+
+## Arquitectura (diagramas)
+
+> Copia y pega la plantilla que necesites, descomenta y adapta.
+
+### Flujo de datos
+
+```mermaid
+<!--
+graph TD
+    A[Entrada: Teclado / Ratón / D-Bus / Sistema] --> B[Procesamiento: Core Rust + Tauri Commands]
+    B --> C[Salida: UI actualizada / Acciones del sistema]
+    style A fill:#e1f5fe
+    style C fill:#e8f5e9
+-->
+```
+
+### Componentes internos
+
+```mermaid
+<!--
+flowchart LR
+    subgraph App[Tauri plugin vsk contextual menu]
+        UI[Frontend Vue 3 + vue-libvasak]
+        Core[Core Rust: lógica principal]
+        IPC[Tauri Commands / Eventos]
+        System[Systemd / D-Bus / PipeWire / Wayland]
+    end
+    UI --> IPC
+    IPC --> Core
+    Core --> DBus[(D-Bus / zbus)]
+    Core --> System
+    style UI fill:#f3e5f5
+    style Core fill:#e3f2fd
+    style DBus fill:#fff3e0
+    style System fill:#fce4ec
+-->
+```
+
+### Integración en el sistema VasakOS
+
+```mermaid
+<!--
+C4Context
+    title Tauri plugin vsk contextual menu en VasakOS
+    Person(usuario, "Usuario", "Persona que usa el sistema")
+    System_Boundary(c1, "VasakOS") {
+        System(app, "Tauri plugin vsk contextual menu", "")
+        System_Ext(settings, "vasak-settings", "Configuración central")
+        System_Ext(keyring, "vasak-keyring", "Secrets y claves")
+        System_Ext(accounts, "vasak-accounts", "Cuentas e identidad")
+        System_Ext(permissions, "vasak-permissions", "Permisos y portales")
+    }
+    System_Ext(systemd, "systemd", "Gestión de servicios")
+    System_Ext(dbus, "D-Bus", "Bus de mensajes del sistema")
+    System_Ext(wayland, "Wayland / Wayfire", "Compositor")
+    System_Ext(pipewire, "PipeWire", "Multimedia")
+    Rel(usuario, app, "Usa")
+    Rel(app, settings, "Lee/escribe config")
+    Rel(app, keyring, "Guarda/lee secrets")
+    Rel(app, accounts, "Identidad de cuenta")
+    Rel(app, permissions, "Solicita permisos")
+    Rel(app, systemd, "Activación / sockets")
+    Rel(app, dbus, "Expone / consume interfaces")
+    Rel(app, wayland, "Superficies / protocolos")
+    Rel(app, pipewire, "Streams de audio/video")
+-->
+```
+
+---
 
 ## Instalación
 
-### 1. El crate
-
-```toml
-[dependencies]
-tauri-plugin-vsk-contextual-menu = { git = "https://github.com/Vasak-OS/tauri-plugin-vsk-contextual-menu", branch = "main" }
-```
-
-```rust
-tauri::Builder::default()
-    .plugin(tauri_plugin_vsk_contextual_menu::init())
-```
-
-### 2. El paquete de JavaScript
+### Arch Linux (repo oficial)
 
 ```bash
-bun add @vasakgroup/plugin-vsk-contextual-menu
+pacman -S vasak-tauri-plugin-vsk-contextual-menu
 ```
 
-### 3. Los permisos
+### Debian / Ubuntu (.deb)
 
-En `src-tauri/capabilities/default.json`:
-
-```json
-{
-  "windows": ["main", "vsk_context_menu"],
-  "permissions": ["vsk-contextual-menu:default", "config-manager:default"]
-}
+```bash
+wget https://github.com/Vasak-OS/tauri-plugin-vsk-contextual-menu/releases/download/v{{VERSION}}/vasak-tauri-plugin-vsk-contextual-menu_{{VERSION}}_amd64.deb
+sudo apt install ./vasak-tauri-plugin-vsk-contextual-menu_{{VERSION}}_amd64.deb
 ```
 
-> `vsk_context_menu` es la ventana del modo ventana. Si falta, el menú se abre
-> sin permisos: sin tema y sin traducciones. Alcanza con no usar el modo ventana
-> para no necesitarla, pero declararla no cuesta nada.
+### Desde fuente
 
-## Uso
+```bash
+git clone https://github.com/Vasak-OS/tauri-plugin-vsk-contextual-menu.git
+cd tauri-plugin-vsk-contextual-menu
 
-```ts
-import { showContextMenu } from "@vasakgroup/plugin-vsk-contextual-menu";
+# Build Rust (plugin Tauri)
+cargo build --release --locked
 
-const elegido = await showContextMenu(
-  [
-    { id: "abrir", label: t("actions.open"), icon: "document-open", accelerator: "Enter" },
-    { id: "copiar", label: t("actions.copy"), icon: "edit-copy", accelerator: "Ctrl+C" },
-    { type: "separator" },
-    { type: "checkbox", id: "ocultos", label: t("view.hidden"), checked: mostrarOcultos },
-    { type: "submenu", label: t("actions.openWith"), items: aplicaciones },
-    { type: "separator" },
-    { id: "borrar", label: t("actions.delete"), icon: "edit-delete", danger: true },
-  ],
-  evento,
-);
+# Tests
+cargo test --locked
 
-if (elegido?.id === "borrar") borrar();
+# Publicar (crates.io + npm)
+cargo publish --locked
+npm publish
 ```
 
-`showContextMenu` devuelve `{ id, checked? }` con lo elegido, o `null` si se
-cerró sin elegir nada. Si se le pasa el evento del clic derecho, además le corta
-el menú que dibuja WebKit.
+### Flatpak / AppImage
 
-El texto de las opciones va **ya traducido**: el menú no traduce nada por su
-cuenta, porque las claves son de cada aplicación.
+> *Placeholder: añadir cuando exista paquete Flatpak o AppImage oficial.*
 
-### En Vue
+---
 
-```ts
-const { show } = useContextMenu();
-// El menú se cierra solo cuando se desmonta el componente que lo abrió.
+## Uso rápido
+
+```bash
+# Se lanza automáticamente (systemd --user) o manualmente:
+tauri-plugin-vsk-contextual-menu
 ```
 
-### Al arrancar la aplicación
+### Atajos / flags principales
 
-```ts
-import { getIconSource } from "@vasakgroup/plugin-vicons";
-import { setupContextMenu } from "@vasakgroup/plugin-vsk-contextual-menu";
+| Acción | Comando / Tecla |
+|--------|-----------------|
+| Acción principal | `tauri-plugin-vsk-contextual-menu` |
+| Configuración | `tauri-plugin-vsk-contextual-menu --config` |
+| Ayuda | `tauri-plugin-vsk-contextual-menu --help` |
 
-setupContextMenu({ iconResolver: getIconSource });
+> **Captura:** `assets/demo.gif` *(placeholder — sustituir por GIF real)*
+
+---
+
+## Configuración
+
+### Archivo de configuración
+
+```
+~/.config/vasak/tauri-plugin-vsk-contextual-menu.toml
 ```
 
-El plugin no depende de vicons a propósito, así se puede usar en cualquier
-aplicación. Enseñarle a resolver nombres de iconos es una línea, y a partir de
-ahí los ítems pueden nombrar iconos del sistema (`edit-copy`) además de pasar
-una imagen ya lista (`data:`, `blob:`, una ruta).
+### Variables de entorno
 
-## El tema
+| Variable | Descripción | Por defecto |
+|----------|-------------|-------------|
+| `VASAK_DEBUG` | Activa logs de depuración en consola | `false` |
+| `VASAK_PROFILE` | Perfil de rendimiento: `balanced`, `performance`, `power-save` | `balanced` |
 
-Los colores y el radio de las esquinas salen de **config-manager**: el esquema
-que el sistema tiene elegido, la variante clara u oscura según `darkmode`, y el
-`radius` de la configuración. Los mismos que usa el resto del escritorio, sin
-que la aplicación tenga que pasarle nada.
+### Integración con `tauri-plugin-config-manager`
 
-No alcanzaba con leer las variables CSS de la aplicación. El menú se dibuja
-también antes de que la aplicación haya cargado su configuración —la ventana del
-modo ventana monta y dibuja en ese hueco—, y ahí las variables todavía no están.
+- Esquemas de color: respeta `--ui-primary`, `--ui-surface`, `--ui-focus`, `--ui-on-surface`, `--ui-border`
+- Tema de iconos: usa el tema del sistema (`vasakos-icon-theme`) vía `vicon` lookup
+- Radio de bordes: variable CSS `--ui-radius` del esquema activo (por defecto 12px)
+- Fuentes: `--ui-font-family`, `--ui-font-size-base` desde el esquema
 
-Cada color se busca en tres lados, en este orden:
+---
 
-1. Lo que el plugin leyó de config-manager.
-2. La variable del sistema que define la aplicación (`--use-ui-background`, …).
-3. El color de fábrica.
+## Desarrollo
 
-Así que si config-manager no está instalado, o esta ventana no tiene su permiso,
-el menú se ve igual: cae al tema de la aplicación. La configuración se lee una
-vez y se recuerda; el evento `config-changed` —el mismo que escuchan las
-aplicaciones— la vuelve a pedir.
+### Requisitos
 
-## Los dos modos
+- **Rust:** `rustup` toolchain estable (`rust-toolchain.toml` fija la versión)
+- **Node / bun:** `bun` ≥ 1.1 (nunca npm/yarn/pnpm para apps Tauri)
+- **Sistema:** `pkg-config`, `libgtk-3-dev`, `libwebkit2gtk-4.1-dev`, `libssl-dev`
+- *`libssl-dev` para TLS, dependencias específicas del plugin*
 
-**Adentro del DOM**, que es lo normal: el menú se dibuja en la ventana que lo
-pide. No cuesta nada y no necesita permisos extra.
+### Dependencias de desarrollo
 
-**En una ventana propia**, con `{ window: true }`: para cuando el menú no entra
-en la ventana que lo pide —el panel mide unos treinta píxeles de alto— o cuando
-tiene que poder salirse de ella. Abre un webview, así que no conviene por
-costumbre.
+#### Sistema (paquetes Arch / Debian / Fedora)
 
-El modo ventana necesita una ruta donde dibujarse, porque la ventana carga la
-aplicación:
+`base-devel`, `pkgconf`, `libssl-dev`, `libwebkit2gtk-4.1-dev`, `libgtk-3-dev`, `libayatana-appindicator3-dev`, `librsvg2-dev`, `gstreamer1.0-plugins-base`, `gstreamer1.0-plugins-good`, `libpipewire-0.3-dev`, `libwireplumber-0.5-dev`, `libdbus-1-dev`, `libudev-dev`, `libxkbcommon-dev`, `libwayland-dev`, `meson`, `ninja`, `clang`, `lld`
 
-```ts
-// routes/index.ts
-{ path: "/vsk-context-menu", component: () => import("@/views/ContextMenuView.vue") }
+#### Rust
+
+`rustup` → `stable` + `rustfmt` + `clippy`
+
+#### Node
+
+**Solo `bun`** (nunca npm/yarn/pnpm para apps Tauri). `bun --version` ≥ 1.1
+
+#### Herramientas CLI
+
+`just` (command runner), `cargo-binstall` (opcional), `cargo-llvm-cov` (para cobertura)
+
+### Correr la app en desarrollo
+
+```bash
+# Frontend (Vite dev server + Tauri dev)
+bun run tauri dev
+
+# Solo frontend (Vite)
+bun run dev
+
+# Solo backend (cargo watch)
+cargo watch -x "run --bin tauri-plugin-vsk-contextual-menu"
 ```
 
-```vue
-<!-- ContextMenuView.vue -->
-<script setup lang="ts">
-import { useContextMenuWindow } from "@vasakgroup/plugin-vsk-contextual-menu";
-useContextMenuWindow();
-</script>
+### Compilar / Build de release
 
-<template><div /></template>
+```bash
+# Build completo (frontend + backend + bundle)
+bun run tauri build
+
+# Solo frontend (para testear bundle después)
+bun run build
+
+# Solo backend Rust (binario optimizado)
+cargo build --release --locked
+
+# Paquetes nativos
+# Arch: makepkg -sf en PKGBUILDS/tauri-plugin-vsk-contextual-menu/
+# Debian: cargo deb --no-build --target-dir src-tauri/target/release/debian
 ```
 
-Si la ruta por omisión no sirve, `init_with_route("#/otra-ruta")`.
+### Targets principales
 
-## Lo que no hace
+```bash
+# Desarrollo (Tauri dev server + hot reload)
+bun run dev
 
-**Submenús en modo ventana.** La ventana se hace del tamaño exacto del menú, así
-que un submenú se abriría afuera y quedaría recortado. El plugin lo rechaza con
-un error claro en vez de dibujarlo mal. En modo DOM andan, porque ahí el único
-límite es la pantalla.
+# Build producción
+bun run build
 
-**Cambiarle el menú a las aplicaciones ajenas.** En Wayland cada cliente dibuja
-el suyo en su propia superficie y no hay protocolo para reemplazarlo: ni este
-plugin ni ninguno puede tocar el menú de Firefox o de LibreOffice. Para esas la
-vía es el tema de GTK y el de Qt.
+# Solo frontend
+bun run build:frontend
 
-## Las medidas
+# Solo backend Rust
+cargo build --release --locked
 
-El alto de cada renglón está en dos lados a la vez: en el CSS
-(`guest-js/style.ts`) y en Rust (`src/models.rs`), que lo necesita para que la
-ventana del modo ventana nazca del tamaño exacto del menú. Si cambia uno, cambia
-el otro.
+# Lint + tipos (pre-commit / CI)
+bunx --bun biome check .
+bunx vue-tsc --noEmit
+cargo fmt --check
+```
+
+### Pruebas
+
+```bash
+# Tests Rust
+cargo test -p tauri-plugin-vsk-contextual-menu --locked
+
+# Tests JS (si tiene bindings)
+bun test
+```
+
+### Convención de commits
+
+[Conventional Commits](https://www.conventionalcommits.org/es/v1.0.0/):
+
+```
+<tipo>(<ámbito>): <descripción corta>
+
+[cuerpo opcional]
+
+[pie opcional: Closes #N]
+```
+
+Tipos habituales: `feat`, `fix`, `bugfix`, `docs`, `ci`, `chore`, `security`, `refactor`, `perf`, `test`.
+
+### Cómo abrir PR
+
+1. Rama desde `origin/main`:
+   ```bash
+   git worktree add -b feat/tema ~/wt/tauri-plugin-vsk-contextual-menu-tema origin/main
+   ```
+2. Prefijos de rama: `fix/`, `feat/`, `bugfix/`, `docs/`, `ci/`, `chore/`, `security/`
+3. Escribe el fix → **`qa` escribe las pruebas** (fallan sin el fix) → suite verde → abre PR
+4. Al abrir PR, **cuatro cosas obligatorias**:
+   - Asignado a `JoaquinDecima`
+   - Etiqueta `enhancement` o `bug` (+ `ci` / `dependencies` si aplica)
+   - Añadido al proyecto «VasakOS Roadmap»
+   - Status **In Progress**
+
+---
+
+## Arquitectura (texto)
+
+### Crates / módulos principales
+
+| `tauri-plugin-vsk-contextual-menu` | Plugin Tauri: Rust backend + JS bindings |
+
+### Interfaces D-Bus / zbus expuestas
+
+| `org.vasak.vsk-contextual-menu` | Métodos específicos del plugin | Funcionalidad expuesta a apps Tauri |
+
+### Puntos de extensión
+
+- **Plugins:** Sistema de plugins modular
+- **Hooks:** Hooks de ciclo de vida
+- **API pública Rust:** API pública del crate principal
+
+### Features / Cargo features
+
+| Feature | Descripción | Default |
+|---------|-------------|---------|
+| `async` | API asíncrona (futures) | ✓ |
+| `blocking` | API bloqueante para compatibilidad | |
+
+Y para apps Tauri+Vue: features del `tauri.conf.json` → `bundle` / `plugins` / `allowlist` (capabilities).
+
+---
+
+## Pruebas y calidad
+
+- **Cobertura objetivo:** ≥ 80 % del código nuevo (SonarCloud Quality Gate)
+- **Informes:** GitHub Actions → pestaña *SonarCloud Code Analysis* → enlace a SonarCloud
+- **Añadir pruebas:** ver `AGENTS.md` sección 9 (mapa de repos y comandos de prueba)
+- **Regla:** toda corrección lleva prueba escrita por `qa` que falla sin el fix
+
+---
+
+## Contribuir
+
+- **Guía:** [.github/CONTRIBUTING.md](https://github.com/Vasak-OS/.github/blob/main/CONTRIBUTING.md)
+- **Plantillas de issue:** [.github/ISSUE_TEMPLATE/](https://github.com/Vasak-OS/.github/tree/main/ISSUE_TEMPLATE)
+- **Código de conducta:** [CODE_OF_CONDUCT.md](https://github.com/Vasak-OS/.github/blob/main/CODE_OF_CONDUCT.md)
+
+---
+
+## Contribuidores
+
+> **Actualizado automáticamente en CI** — muestra los avatares de quienes han aportado código a este repo.
+
+<div align="center">
+  
+</div>
+
+[Ver todos los contribuidores](https://github.com/Vasak-OS/tauri-plugin-vsk-contextual-menu/graphs/contributors)
+
+---
+
+## Donadores / Sponsors
+
+[![Sponsors](https://img.shields.io/github/sponsors/Vasak-OS?style=flat&label=Sponsors)](https://github.com/sponsors/Vasak-OS)
+
+> **Backers:** *Actualizado automáticamente en CI desde GitHub Sponsors / OpenCollective / Polar.*
+
+[💖 Donar al proyecto](https://github.com/sponsors/Vasak-OS)
+
+---
 
 ## Licencia
 
-GPL-3.0-only
+`GPL-3.0` — Copyright © 2026 **Vasak-OS Contributors**
+
+[Ver licencia completa](LICENSE)
